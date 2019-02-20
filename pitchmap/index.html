@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang='en'>
+   <head>
+      <meta charset='utf-8'>
+      <title>Statistics</title>
+      <script src='scripts/d3.v5.min.js' type='text/javascript'></script>
+      <script src='scripts/crossfilter.v1.min.js' type='text/javascript'></script>
+      <script src='scripts/dc.min.js' type='text/javascript'></script>
+      <script src='scripts/jquery.min.js' type='text/javascript'></script>
+      <script src='scripts/bootstrap.min.js' type='text/javascript'></script>
+
+      <script src="scripts/d3-color.v1.min.js"></script>
+      <script src="scripts/d3-interpolate.v1.min.js"></script>
+      <script src="scripts/d3-scale-chromatic.v1.min.js"></script>
+
+      <script src="scripts/x3dom-full.js"></script>
+
+      <link href='bootstrap.min.css' rel='stylesheet' type='text/css'>
+      <link href='dc.css' rel='stylesheet' type='text/css'>
+      <link href='scripts/x3dom.css' rel='stylesheet' type='text/css'>
+
+      <style type="text/css">
+         h4 span {
+         font-size:14px;
+         font-weight:normal;
+         }
+         h2 {
+         float: right;
+         }
+         h2 span {
+         font-size:14px;
+         font-weight:normal;
+         }
+           .dc-chart g.chart-body {
+               clip-path: none;
+           }
+           .dc-chart rect.stack-deselected {
+               opacity: 0.2;
+           }
+      </style>
+   </head>
+    <body>
+
+      <p id="filename">data2.csv</p>
+
+      <script>
+         var match_identifier = location.search.split('match=')[1];
+         document.getElementById("filename").innerHTML = "together/together-" + match_identifier + ".csv";
+      </script>
+
+      <div class='container-fluid' style='font: 12px sans-serif;'>
+
+        <!-- top level -->
+         <div class="dc-data-count" style="float: left;">
+            <h2>
+               <span>
+                 <span class="filter-count"></span>
+                 selected out of
+                 <span class="total-count"></span>
+                 records |
+                 <a href="javascript:dc.filterAll(); dc.renderAll();">Reset All</a>
+               </span>
+            </h2>
+         </div>
+
+         <!-- pitchmap bubble -->
+         <div id="dc-pitchmap-bubblechart">
+           <svg width="1078" height="598" id="pitchmapCanvas"/>
+           <div class="reset" style="display: none;">selected: <span class="filter"></span>
+             <a href="javascript:pitchmapChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+
+         <!-- wagonwheel bubble -->
+         <div id="dc-wagonwheel-bubblechart">
+           <svg width="1077" height="598" id="wagonwheelCanvas"/>
+           <div class="reset" style="display: none;">selected: <span class="filter"></span>
+             <a href="javascript:wagonwheelChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+
+         <!-- beehive bubbles -->
+
+         <div id="dc-rightbeehive-bubblechart">
+           <svg width="1077" height="598" id="rightHandBeehiveCanvas"/>
+           <div class="reset" style="display: none;">selected: <span class="filter"></span>
+             <a href="javascript:rightBeehiveChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+         <div id="dc-leftbeehive-bubblechart">
+           <svg width="1077" height="598" id="leftHandBeehiveCanvas"/>
+           <div class="reset" style="display: none;">selected: <span class="filter"></span>
+             <a href="javascript:leftBeehiveChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+
+         <div id="trajectoryInformation">
+
+           <button type="button" onclick="document.getElementById('slipsCamera').setAttribute('set_bind','true');">Slips</button>
+           <button type="button" onclick="document.getElementById('umpireCamera').setAttribute('set_bind','true');">Umpire</button>
+           <button type="button" onclick="document.getElementById('stumpsCamera').setAttribute('set_bind','true');">Stumps</button>
+           <button type="button" onclick="document.getElementById('topView').setAttribute('set_bind','true');">Top View</button>
+           <button type="button" onclick="document.getElementById('sideView').setAttribute('set_bind','true');">Side View</button>
+
+           <button type="button" onclick="toggleShape('trajectory');">Toggle Trajectories</button>
+           <button type="button" onclick="toggleShape('starting');">Toggle Starting</button>
+           <button type="button" onclick="toggleShape('pitching');">Toggle Pitching</button>
+           <button type="button" onclick="toggleShape('ending');">Toggle Ending</button>
+           <button type="button" id="exportButton">Export Data</button>
+
+           <X3D showStat="false" showriteLineog="true" showLog="true" x="0px" y="0px" width="1077px" height="598px">
+             <Scene>
+               <Viewpoint id="umpireCamera" position="23.80208 -0.13703 1.48734" centerOfRotation= "10.5 0 0" orientation="0.56668 0.56498 0.59973 2.05364"></Viewpoint>
+               <Viewpoint id="slipsCamera" position="-8.96518 -5.79259 1.55315" centerOfRotation= "10.5 0 0" orientation="0.76747 -0.43025 -0.47527 1.67677"></Viewpoint>
+               <Viewpoint id="stumpsCamera" position="-4.56172 0.15235 1.33474" centerOfRotation= "10.5 0 0" orientation="0.49701 -0.53082 -0.68645 1.93934"></Viewpoint>
+               <Viewpoint id="topView" position="10.32214 0.00026 31.01539" centerOfRotation= "10.5 0 0" orientation="0 0 -1 1.57"></Viewpoint>
+               <Viewpoint id="sideView" position="14 -10 0" centerOfRotation= "10.5 0 0" orientation="0 0 -1 1.57"></Viewpoint>
+
+               <DirectionalLight id="directional" direction='0 0 -1' on ="TRUE" intensity='0.2' shadowIntensity='0.0'> </DirectionalLight>
+
+               <transform rotation="1 0 0 -1.57">
+                 <transform translation="0 -0.3 0">
+                     <Shape>
+                         <appearance>
+                             <material diffusecolor="0.905 0.847 0.611" ambientintensity="0.2" emissivecolor="0,0,0" shininess="0.2" specularcolor="0,0,0"></material>
+                         </appearance>
+                         <cylinder radius="0.028" height="0.745"></cylinder>
+                     </Shape>
+                   </transform>
+               </transform>
+
+               <transform rotation="1 0 0 -1.57">
+                 <transform translation="0 -0.3 0.1">
+                     <Shape>
+                         <appearance>
+                             <material diffusecolor="0.905 0.847 0.611" ambientintensity="0.2" emissivecolor="0,0,0" shininess="0.2" specularcolor="0,0,0"></material>
+                         </appearance>
+                         <cylinder radius="0.028" height="0.745"></cylinder>
+                     </Shape>
+                   </transform>
+               </transform>
+
+               <transform rotation="1 0 0 -1.57">
+                 <transform translation="0 -0.3 0.2">
+                     <Shape>
+                         <appearance>
+                             <material diffusecolor="0.905 0.847 0.611" ambientintensity="0.2" emissivecolor="0,0,0" shininess="0.2" specularcolor="0,0,0"></material>
+                         </appearance>
+                         <cylinder radius="0.028" height="0.745"></cylinder>
+                     </Shape>
+                   </transform>
+               </transform>
+
+               <transform rotation="1 0 0 -1.57">
+                 <transform translation="20 -0.3 0">
+                     <Shape>
+                         <appearance>
+                             <material diffusecolor="0.905 0.847 0.611" ambientintensity="0.2" emissivecolor="0,0,0" shininess="0.2" specularcolor="0,0,0"></material>
+                         </appearance>
+                         <cylinder radius="0.028" height="0.745"></cylinder>
+                     </Shape>
+                   </transform>
+               </transform>
+
+               <transform rotation="1 0 0 -1.57">
+                 <transform translation="20 -0.3 0.1">
+                     <Shape>
+                         <appearance>
+                             <material diffusecolor="0.905 0.847 0.611" ambientintensity="0.2" emissivecolor="0,0,0" shininess="0.2" specularcolor="0,0,0"></material>
+                         </appearance>
+                         <cylinder radius="0.028" height="0.745"></cylinder>
+                     </Shape>
+                   </transform>
+               </transform>
+
+               <transform rotation="1 0 0 -1.57">
+                 <transform translation="20 -0.3 0.2">
+                     <Shape>
+                         <appearance>
+                             <material diffusecolor="0.905 0.847 0.611" ambientintensity="0.2" emissivecolor="0,0,0" shininess="0.2" specularcolor="0,0,0"></material>
+                         </appearance>
+                         <cylinder radius="0.028" height="0.745"></cylinder>
+                     </Shape>
+                   </transform>
+               </transform>
+
+               <Transform translation="12 0 -0.04">
+                 <transform rotation="1 0 0 -1.5707963267948966">
+                   <Shape>
+                     <Appearance>
+                       <Material diffuseColor="1 1 1">
+                       </Material>
+                       <ImageTexture url="sand-texture.jpg"/>
+                     </Appearance>
+                     <Box size="30 0.001 3"/>
+                   </Shape>
+                 </transform>
+               </Transform>
+
+               <Transform translation="8 0 -0.06">
+                 <transform rotation="1 0 0 -1.5707963267948966">
+                   <Shape>
+                     <Appearance>
+                       <Material diffuseColor="1 1 1">
+                       </Material>
+                       <ImageTexture url="grass-texture.png"/>
+                     </Appearance>
+                     <Box size="50 0.001 40"/>
+                   </Shape>
+                 </transform>
+               </Transform>
+
+               <transform translation='0 0 0' id="trajectories">
+               </transform>
+
+             </Scene>
+           </X3D>
+         </div>
+
+
+         <!-- innings donut -->
+         <div id="dc-innings-chart">
+           <div class="reset" style="display: none;">selected: <span class="filter"></span>
+             <a href="javascript:inningsChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+
+         <!-- runs histogram -->
+         <div id="dc-runscount-chart">
+           <div class="reset" style="display: none;">selected: <span class="filter"></span>
+             <a href="javascript:runsCountChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+
+         <!-- dot ball checkbox -->
+         <div id="dc-dotballs-chart">
+           <div class="reset" style="display: none;">selected: <span class="filter"></span>
+             <a href="javascript:dotBallsChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+
+         <!-- speed count histogram -->
+         <div id="dc-speedcount-chart">
+           <div class="reset" style="display: none;">selected: <span class="filter"></span>
+             <a href="javascript:speedCountChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+
+         <!-- over innings stacked chart -->
+         <div id="dc-stacked-chart">
+           <div class="reset" style="visibility: hidden;">selected: <span class="filter"></span>
+             <a href="javascript:stackedOverChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+
+         <!-- runs timeline brushable bar chart-->
+         <div id="dc-runs-chart">
+           <div class="reset" style="display: none;">selected: <span class="filter"></span>
+             <a href="javascript:runsChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+
+         <!-- speed timeline series chart-->
+         <div id="dc-speed-chart">
+           <div class="reset" style="display: none;">selected: <span class="filter"></span>
+             <a href="javascript:speedChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+
+         <!-- batsmen row chart -->
+         <div id="dc-batsmen-chart">
+           <div class="reset" style="display: none;">selected: <span class="filter"></span>
+             <a href="javascript:batsmenChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+
+         <!-- hand pie chart-->
+         <div id="dc-hand-chart">
+           <div class="reset" style="display: none;">selected: <span class="filter"></span>
+             <a href="javascript:handChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+
+         <!-- bowling type pie chart-->
+         <div id="dc-bowlingtype-chart">
+           <div class="reset" style="display: none;">selected: <span class="filter"></span>
+             <a href="javascript:bowlingTypeChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+
+         <!-- bowling type pie chart-->
+         <div id="dc-bowlingfrom-chart">
+           <div class="reset" style="display: none;">selected: <span class="filter"></span>
+             <a href="javascript:bowlingFromChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+
+         <!-- bowling type pie chart-->
+         <div id="dc-bowlers-chart">
+           <div class="reset" style="display: none;">selected: <span class="filter"></span>
+             <a href="javascript:bowlersChart.filterAll();dc.redrawAll();">reset</a>
+           </div>
+         </div>
+
+        <!-- runs timeline brushable bar chart-->
+        <div id="dc-bowlingdetail-chart">
+          <div class="reset" style="display: none;">selected: <span class="filter"></span>
+            <a href="javascript:bowlingDetailChart.filterAll();dc.redrawAll();">reset</a>
+          </div>
+        </div>
+
+        <!-- foot movement bar chart-->
+        <div id="dc-foot-chart">
+          <div class="reset" style="display: none;">selected: <span class="filter"></span>
+            <a href="javascript:footChart.filterAll();dc.redrawAll();">reset</a>
+          </div>
+        </div>
+
+        <!-- batting connection bar chart-->
+        <div id="dc-connection-chart">
+          <div class="reset" style="display: none;">selected: <span class="filter"></span>
+            <a href="javascript:connectionChart.filterAll();dc.redrawAll();">reset</a>
+          </div>
+        </div>
+
+        <!-- shots bar chart-->
+        <div id="dc-shots-chart">
+          <div class="reset" style="display: none;">selected: <span class="filter"></span>
+            <a href="javascript:shotsChart.filterAll();dc.redrawAll();">reset</a>
+          </div>
+        </div>
+
+        <!-- shots bar chart-->
+        <div id="dc-position-chart">
+          <div class="reset" style="display: none;">selected: <span class="filter"></span>
+            <a href="javascript:fielderPositionChart.filterAll();dc.redrawAll();">reset</a>
+          </div>
+        </div>
+
+        <!-- shots bar chart-->
+        <div id="dc-fielder-chart">
+          <div class="reset" style="display: none;">selected: <span class="filter"></span>
+            <a href="javascript:fielderChart.filterAll();dc.redrawAll();">reset</a>
+          </div>
+        </div>
+
+        <div class='row'>
+           <div class='span12'>
+              <table class='table table-hover' id='dc-comment-table'>
+                 <thead>
+                    <tr class='header'>
+                       <th>Identifier</th>
+                       <th>Batsman</th>
+                       <th>Shot</th>
+                       <th>Bowler</th>
+                       <th>Innings</th>
+                       <th>Debit</th>
+                       <th>Comment</th>
+                    </tr>
+                 </thead>
+              </table>
+           </div>
+        </div>
+
+      </div>
+
+      <script src="utils.js" type="text/javascript"></script>
+      <script src="projection.js" type="text/javascript"></script>
+      <script src="pulse-pitchmap.js" type="text/javascript"></script>
+      <script src="pulse-beehive.js" type="text/javascript"></script>
+      <script src="pulse-wagonwheel.js" type="text/javascript"></script>
+      <script src="crossfilter-functions.js" type="text/javascript"></script>
+      <script src="pitchmap.js" type="text/javascript"></script>
+      <script src="beehive.js" type="text/javascript"></script>
+      <script src="wagonwheel.js" type="text/javascript"></script>
+      <script src="compute.js" type="text/javascript"></script>
+      <script src="shape.js" type="text/javascript"></script>
+      <script src="pulse.js" type="text/javascript"></script>
+      <script src="x3dom-trajectory.js" type="text/javascript"></script>
+      <script src="main.js" type="text/javascript"></script>
+      <script src="hovering.js" type="text/javascript"></script>
+    </body>
+</html>
